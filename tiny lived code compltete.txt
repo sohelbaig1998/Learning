@@ -1,0 +1,298 @@
+{%load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tiny.cloud/1/3j900ohbocv9ugy6p78o3l8olee5pnn3mv6ewlaps2whrzjj/tinymce/5/tinymce.min.js"
+    referrerpolicy="origin"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+
+  <script>
+    tinymce.init({
+      selector: '#dynamicTextId',
+      file_picker_types: 'file image media',
+      plugins: 'image',
+      // menubar: 'insert',
+      toolbar: 'undo redo | styleselect | forecolor | bold italic | alignleft aligncenter alignright alignjustify | outdent indent | link image | code',
+      toolbar_location: 'top',
+      skin: 'outside'
+
+    });
+  </script>
+  <script>
+    tinymce.init({
+      selector: '#explanationText',
+      file_picker_types: 'file image media',
+      plugins: 'image',
+      toolbar: 'undo redo | styleselect | forecolor | bold italic | alignleft aligncenter alignright alignjustify | outdent indent | link image | code',
+      toolbar_location: 'top',
+      skin: 'outside'
+
+    });
+  </script>
+  {% if messages %}
+  <div class="container"
+    style="height: 300px; position: fixed;top:500px; left: 200px; right: 200px; z-index: 999 !important;">
+    <div class="div"
+      style="margin: 0; position: absolute; top: 50%; left: 50%; -ms-transform: translate(-50%, -50%); transform: translate(-50%, -50%);">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible">
+        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+        <strong>{{ message.tags }}!</strong> {{ message }}.
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <script>
+    $(document).ready(function () {
+      var chapter_id;
+      var subject_id;
+      // setup session cookie data. This is Django-related
+      function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+          var cookies = document.cookie.split(';');
+          for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+      var csrftoken = getCookie('csrftoken');
+      function csrfSafeMethod(method) {
+        // these HTTP methods do not require CSRF protection
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+      }
+      $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+          if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+          }
+        }
+      });
+      $("#chaptersDropDown").on('change', function () {
+        var $chapteroption = $(this).find('option:selected'),
+          id = $chapteroption.val(),
+          name = $chapteroption.data('name');
+        $("#chapter_id").val(id);
+        // open your browser's console log and ensure that you get the correct values
+        chapter_id = id;
+        console.log(id, name);
+      })
+
+      $("#subjectDropDown").on('change', function () {
+        var $option = $(this).find('option:selected'),
+          id = $option.val(),
+          name = $option.data('name');
+        $("#chapter_id").val("");
+        // open your browser's console log and ensure that you get the correct values
+        console.log(id, name);
+        $('.chapterOptions').empty();
+
+        $('.chapterOptions').append("<option selected value=''>Choose a chapter</option>");
+        data = {
+          subject_id: id,
+
+        }
+        $.ajax({
+          method: "POST",
+          data: data,
+          url: "/api/content/get_subject_chapters/",
+          success: function (chapters) {
+            console.log(chapters);
+            $.each(chapters.chapters, function (index, chapter) {
+              var chapterId = chapter.id;
+              // $("#chapter_id").val(chapterId);
+              var chapterName = chapter.name;
+              console.log(chapterId, chapterName);
+              $('.chapterOptions').append("<option value='" + chapterId + "'>" + chapterName + "</option>");
+
+            })
+
+          },
+          error: function (jqXHR, textStatus, errorThrown) {
+            alert("An error occured, please refresh the page.")
+          }
+        })
+      })
+    });
+    172367
+
+  </script>
+
+</head>
+
+<body>
+  <div class="btn" style="float: right;">
+    <a href="/content/questions_for_edit/"><button style="border-radius: 1ch;">Edit and delete questions</button></a>
+  </div>
+  <div class="btn" style="float: right;">
+    <a href="/content/teacher_upload_question/"><button style="border-radius: 1ch;">reload</button></a>
+  </div>
+  <form action='{% url 'content:uploadQuestionForm' %}' method="post">
+    {% csrf_token %}
+    <label>dynamicText</label>
+    <textarea id="dynamicTextId" name="dynamicText" style="width: 700px; height: 400px;"></textarea><br>
+   
+    {% for option in options %}
+    {% if option == 'E' %}
+    <input type="checkbox" id="{{option}}" name="correctOption" value="{{option}}">
+    <label for="option">{{option}}</label>
+    <input type="checkbox" id="" name="checked_option" value="optionChecked" style="margin-left: 20px;">
+    <label for="option">want to show E option to student</label><br>
+    {% else %}
+    <input type="checkbox" id="{{option}}" name="correctOption" value="{{option}}">
+    <label for="option">{{option}}</label><br>
+    {% endif %}
+    {%endfor%}
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <label class="input-group-text" for="subjectDropDown">Subjects</label>
+      </div>
+      <select class="custom-select" id="subjectDropDown" required>
+        {% if selectedSubject %}
+        <option selected>{{selectedSubject}}</option>
+        {% else %}
+        <option selected value=''>Choose a subject</option>
+        {% endif %}
+        {% for subject in subjects %}
+        <option value="{{subject.id}}" name="{{subject.name}}">{{subject.name}}</option>
+        {%endfor%}
+      </select>
+    </div>
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <label class="input-group-text" for="chaptersDropDown">Chapters</label>
+      </div>
+      <select class="custom-select chapterOptions" id="chaptersDropDown" required>
+        {% if selectedChapters %}
+        <option selected>{{selectedChapters}}</option>
+        {% endif %}
+      </select>
+    </div>
+    {% if selectedChapters_id %}
+    <input type="hidden" name="chapterid" value="{{selectedChapters_id}}" id="chapter_id" />
+    {% else %}
+    <input type="hidden" name="chapterid" value="" id="chapter_id" />
+    {% endif %}
+
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <label class="input-group-text" for="questionTopicDropDown">topics</label>
+      </div>
+      <select class="custom-select questionTopicDropDown" name="questionTopic" id="questionTopicDropDown">
+        {% if selected_topic %}
+        <option selected value="{{selected_topic.id}}">{{selected_topic}}</option>
+        {% endif %}
+        {% for i in allTopics %}
+        {% if forloop.first %}
+        <option value='' selected>Choose a topic (optional)</option>
+        {% endif %}
+        <option value="{{i.id}}">{{i.topic}}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <label class="input-group-text" for="questionSubTopicDropDown">sub topics</label>
+      </div>
+      <select class="custom-select questionSubTopicDropDown" name="questionSubTopic" id="questionSubTopicDropDown">
+        {% if selected_subTopic %}
+        <option selected value="{{selected_subTopic.id}}">{{selected_subTopic}}</option>
+        {% endif %}
+
+        {% for i in all_sub_topics %}
+        {% if forloop.first %}
+        <option value='' selected>Choose a sub topic (optional)</option>
+        {% endif %}
+        <option value="{{i.id}}">{{i.name}}</option>
+        {% endfor %}
+
+      </select>
+    </div>
+    
+    <div class="form-group" id="explanationDiv" style="display: none;">
+      <label>Explanation</label>
+      <textarea id="explanationText" name="explanation" style="width: 700px;"></textarea>
+    </div>
+    <button id="explanationBtn" style="margin-bottom: 20px;">add explanation</button>
+    <input type='submit' value='Add Question' id="finalButton">
+  </form>
+
+  <script>
+    $("#explanationBtn").click(function (e) {
+      e.preventDefault();
+      $("#explanationDiv").show()
+      var scrollPos = $("#explanationDiv").offset().top;
+      $(window).scrollTop(scrollPos);
+    });
+
+    $("#chaptersDropDown").on('change', function () {
+      var $option = $(this).find('option:selected'),
+        chapter_id = $option.val();
+      data = {
+        chapter_id: chapter_id,
+      }
+      $.ajax({
+        method: "POST",
+        data: data,
+        url: "/api/content/get_topic_chaptersWise/",
+        success: function (topics) {
+          $('.questionTopicDropDown').empty();
+          $('.questionTopicDropDown').append("<option selected value=''>Choose a topic (optional)</option>");
+          $.each(topics.topics, function (index, topic) {
+            var topicId = topic.id;
+            var topicName = topic.topic;
+            $('.questionTopicDropDown').append("<option value='" + topicId + "'>" + topicName + "</option>");
+          })
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+          alert("An error occured, please refresh the page.")
+        }
+      })
+    });
+
+    $("#questionTopicDropDown").on('change', function () {
+      var $option = $(this).find('option:selected'),
+        topic_id = $option.val();
+      data = {
+        topic_id: topic_id,
+      }
+      $.ajax({
+        method: "POST",
+        data: data,
+        url: "/api/content/get_subtopic_topicWise/",
+        success: function (sub_topics) {
+          $('.questionSubTopicDropDown').empty();
+          $('.questionSubTopicDropDown').append("<option selected value=''>Choose a topic (optional)</option>");
+          $.each(sub_topics.sub_topics, function (index, sub_topics) {
+            var topicId = sub_topics.id;
+            var topicName = sub_topics.sub_topic;
+            $('.questionSubTopicDropDown').append("<option value='" + topicId + "'>" + topicName + "</option>");
+          })
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+          alert("An error occured, please refresh the page.")
+        }
+      })
+    });
+
+  </script>
+
+</body>
+
+</html>

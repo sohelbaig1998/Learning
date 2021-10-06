@@ -1,0 +1,30 @@
+username = anjanaJha_sales
+SalesNumber(code) = 1
+
+username = antima_sales
+SalesNumber(code) = 2
+
+username = aryanBali_sales
+SalesNumber(code) = 3
+
+username = mohiniSahu_sales
+SalesNumber(code) = 4
+
+username = prachiJain_sales
+SalesNumber(code) = 5
+
+username = surendraSingh_sales
+SalesNumber(code) = 6
+
+username = tejpal_sales
+SalesNumber(code) = 7
+
+username = vinayJangid_sales
+SalesNumber(code) = 8
+
+
+
+
+
+
+
